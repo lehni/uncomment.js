@@ -100,7 +100,7 @@ function uncomment(str) {
     });
 
     return str;
-};
+}
 
 // Export uncomment function for node
 if (typeof module !== 'undefined')
