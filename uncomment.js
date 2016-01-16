@@ -1,8 +1,8 @@
 /**
- * ucomment.js - Strips comments out of JavaScript code.
+ * uncomment.js - Strips comments out of JavaScript code.
  *
- * Copyright (c) 2011 - 2013 Juerg Lehni
- * http://lehni.org/
+ * Copyright (c) 2011 - 2016 Juerg Lehni
+ * http://scratchdisk.com/
  *
  * Based on, and expanded from:
  * http://james.padolsey.com/javascript/removing-comments-in-javascript/
@@ -10,7 +10,8 @@
  * Distributed under the MIT license.
  */
 
-function uncomment(str) {
+function uncomment(str, options) {
+	options = options || {};
 	// Add some padding so we can always look ahead and behind by two chars
 	str = ('__' + str + '__').split('');
 	var quote = false,
@@ -89,15 +90,21 @@ function uncomment(str) {
 	// Remove padding again.
 	str = str.join('').slice(2, -2);
 
-	// Strip empty lines that contain only white space and line breaks, as they
-	// are left-overs from comment removal.
-	str = str.replace(/^[ \t]+(\r\n|\n|\r)/gm, function(all) {
-		return '';
-	});
-	// Replace a sequence of more than two line breaks with only two.
-	str = str.replace(/(\r\n|\n|\r)(\r\n|\n|\r)+/g, function(all, lineBreak) {
-		return lineBreak + lineBreak;
-	});
+	if (options.removeEmptyLines || options.mergeEmptyLines) {
+		// Strip empty lines that contain only white space and line breaks, as
+		// they are left-overs from comment removal.
+		str = str.replace(/^([ \t]+(?:\r\n|\n|\r))/gm, function(all) {
+			return '';
+		});
+
+		// Replace a sequence of two or more line breaks with:
+		// - One break, if removeEmptyLines is set.
+		// - Two breaks, if mergeEmptyLines is set, meaning they all merge to 
+		//   one empty line.
+		str = str.replace(/(\r\n|\n|\r){2,}/g, function(all, lineBreak) {
+			return options.mergeEmptyLines ? lineBreak + lineBreak : lineBreak;
+		});
+	}
 
 	return str;
 }
