@@ -1,6 +1,6 @@
 {
 	"name": "uncomment",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"main": "uncomment.js",
 	"description": "Strips comments out of JavaScript code.",
 	"author": "Jürg Lehni <juerg@scratchdisk.com> (http://scratchdisk.com)",
