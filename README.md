@@ -18,7 +18,7 @@ var uncomment = require('./uncomment.js');
 var str = "\
 var one = 1;\n\
 // two\n\
-three(/[\s\\/]/);\n\
+three(/[\\s\\/]/);\n\
 // four\n\
 five(one / 2);\n\
 six(); /* seven\n\
@@ -29,7 +29,7 @@ eleven();\n\
 ";
 
 var res = uncomment(str, {
-	removeEmptyLines: true
+    removeEmptyLines: true
 });
 
 console.log(res);
@@ -54,7 +54,7 @@ Output:
 
 ```js
 var one = 1;
-three(/[s\/]/);
+three(/[\s\/]/);
 five(one / 2);
 six(); 
 eleven();
