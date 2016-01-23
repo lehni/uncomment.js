@@ -10,8 +10,12 @@
 function uncomment(str, options) {
 	options = options || {};
 	var length = str.length,
+		chr = str[0],
+		prev,
+		next,
 		parts = [],
 		index = 0,
+		prevToken,
 		quote = false,
 		quoteChar,
 		regularExpression = false,
@@ -21,27 +25,27 @@ function uncomment(str, options) {
 		preserveComment = false;
 
 	for (var i = 0; i < length; i++) {
+		next = str[i + 1];
 		// When checking for quote escaping, we also need to check that the
 		// escape sign itself is not escaped, as otherwise '\\' would cause the
 		// wrong impression of an unclosed string:
-		var unescaped = str[i - 1] !== '\\' || str[i - 2] === '\\';
-
+		var unescaped = prev !== '\\' || str[i - 2] === '\\';
 		if (quote) {
-			if (str[i] === quoteChar && unescaped)
+			if (chr === quoteChar && unescaped)
 				quote = false;
 		} else if (regularExpression) {
 			// Make sure '/'' inside character classes is not considered the end
 			// of the regular expression.
-			if (str[i] === '[' && unescaped) {
+			if (chr === '[' && unescaped) {
 				characterClass = true;
-			} else if (str[i] === ']' && unescaped && characterClass) {
+			} else if (chr === ']' && unescaped && characterClass) {
 				characterClass = false;
-			} else if (str[i] === '/' && unescaped && !characterClass) {
+			} else if (chr === '/' && unescaped && !characterClass) {
 				regularExpression = false;
 			}
 		} else if (blockComment) {
 			// Is the block comment closing?
-			if (str[i] === '*' && str[i + 1] === '/') {
+			if (chr === '*' && next === '/') {
 				// Increase by 1 to skip closing '/', as it would be mistaken
 				// for a regexp otherwise.
 				i++;
@@ -53,18 +57,17 @@ function uncomment(str, options) {
 			}
 		} else if (lineComment) {
 			// One-line comments end with the line-break.
-			if (/[\n\r]/.test(str[i + 1])) {
+			if (/[\n\r]/.test(next)) {
 				lineComment = false;
 				// Next content starts after the comment.
 				index = i + 1;
 			}
 		} else {
-			if (/['"]/.test(str[i])) {
+			if (/['"]/.test(chr)) {
 				quote = true;
 				// Remember the type of opening quote so we can match it.
-				quoteChar = str[i];
-			} else if (str[i] === '/') {
-				var next = str[i + 1];
+				quoteChar = chr;
+			} else if (chr === '/') {
 				if (next === '*') {
 					// Do not filter out conditional comments /*@ ... */
 					// and comments marked as protected /*! ... */
@@ -74,20 +77,25 @@ function uncomment(str, options) {
 					lineComment = true;
 				} else {
 					// We need to make sure we don't count normal divisions as
-					// regular expressions. Matching this properly is difficult,
-					// but if we assume that normal division always have a space
-					// after /, a simple check for white space or '='' (for /=)
-					// is enough to distinguish divisions from regexps.
-					// TODO: Develop a proper check for regexps.
-					regularExpression = !/[\s=]/.test(next);
+					// regular expressions. Look at the previous token in the
+					// code to decide if this is a regular expression.
+					// This check is based on code in JSLint:
+					regularExpression = /[(,=:[!&|?{};\/]/.test(prevToken);
 				}
 				if (index < i && (lineComment ||
 						blockComment && !preserveComment)) {
 					// Insert valid content up to the comment.
-					parts.push(str.substring(index, index = i));
+					parts.push(str.substring(index, i));
+					index = i;
 				}
 			}
 		}
+		// Keep track of the previous non-whitespace character, as required by
+		// the regular expression check above.
+		if (!/\s/.test(chr))
+			prevToken = chr;
+		prev = chr;
+		chr = next;
 	}
 	if (index < length && !lineComment && (!blockComment || preserveComment)) {
 		// Insert valid content up to the end of the string.
